@@ -1,0 +1,99 @@
+Welcome to notebook two — derivatives. The previous notebook ended with the picture. The derivative of f at x is the slope of the tangent line to f at the point x comma f of x. Defined as the limit of secant slopes — f prime of x equals the limit, as h approaches zero, of f of x plus h, minus f of x, all divided by h.
+
+Two things to keep straight. First, f prime of x is a number. It tells you the slope at one specific point. Plug in x equals two, you get one number. Second, f prime is also a function. As x varies, the slope varies. So f prime is itself a new function — the derivative function — whose value at every x is the slope of the original f at that x.
+
+In machine learning, we usually want both readings at once. We treat f prime as the function, so we can evaluate it at any current parameter setting. And we evaluate it at the specific parameter values we currently have.
+
+A geometric check. If f is sloping up at x, then f prime of x is positive. Sloping down — f prime of x is negative. Horizontal, meaning flat — f prime of x is zero. That last one is the entire game of optimization. Flat points are candidates for minima.
+
+A note on existence. Not every continuous function is differentiable. The absolute value of x, and relu of x, are continuous everywhere but have no derivative at x equals zero. The left side slope and the right side slope disagree. The limit does not exist there. Frameworks paper over this with subgradients, as we mentioned in the previous notebook.
+
+A quick word on notation. Three notations coexist. Use whichever clarifies — they all mean the same thing.
+
+Lagrange notation is f prime of x. Concise, when the variable is obvious.
+
+Leibniz notation is d f, divided by d x. When you want to spotlight which variable is changing, the chain rule reads naturally in this notation.
+
+Operator notation is capital d applied to f. Theoretical writing, multi input and multi output.
+
+Newton's dot notation is rare in machine learning. Mostly physics.
+
+A few more useful pieces. Higher order derivatives — f double prime of x, or d squared f over d x squared, for the second derivative. The hessian in notebook five is the multivariable version.
+
+Evaluation at a point — f prime of a, or d f over d x evaluated at x equals a. The bar with subscript pins down "evaluated here."
+
+The differential. D y equals f prime of x, times d x. Reads as — a small change in y is approximately f prime of x, times a small change in x. This is the linear approximation. The seed of taylor expansion in notebook six.
+
+Now let us go through the basic rules. A handful of rules let us differentiate almost any function machine learning uses. The first three are the absolute essentials.
+
+The power rule. For any real exponent n, the derivative of x to the n equals n times x to the n minus one. Examples — the derivative of x squared is two x. The derivative of x to the one half is one half times x to the negative one half. The derivative of one over x — which is x to the negative one — equals negative one over x squared.
+
+The constant rule. The derivative of a constant is zero. If c does not depend on x, then d c over d x is zero. Loss functions never lose constant terms during gradient descent. They just do not matter.
+
+Linearity. Derivatives respect scaling and addition. The derivative of c times f of x equals c times f prime of x. And the derivative of f of x plus g of x equals f prime of x plus g prime of x. Combined, the derivative of any linear combination is the same linear combination of derivatives. Mean squared error is built from this. M s e of w equals one over n, times the sum of y sub i minus y hat sub i, squared, and it differentiates term by term.
+
+Now the product and quotient rules. Differentiating a product is not the product of derivatives. The product rule says — the derivative of f times g equals f prime times g, plus f times g prime. The memory aid is — derivative of first, times second, plus first, times derivative of second.
+
+The quotient rule. The derivative of f divided by g equals f prime times g, minus f times g prime, all divided by g squared.
+
+The quotient rule looks heavy but you almost never need to memorize it. You can usually rewrite f divided by g as f times g to the negative one, and use the product rule plus the chain rule. In machine learning you will meet the quotient rule mostly in derivations of softmax and the sigmoid derivative — both follow from expressions of the form one over one plus e to the negative x.
+
+There is a reusable trick. When f equals u divided by v, and v is positive, taking logs gives — log f equals log u, minus log v. Differentiating with the chain rule and rearranging is sometimes cleaner than the quotient rule directly. This is called logarithmic differentiation. It is how you would derive the gradient of softmax cleanly.
+
+Now a first taste of the chain rule. The chain rule is the heart of backpropagation, and notebook four unpacks it carefully. For now, a one line version — the derivative of f composed with g of x equals f prime of g of x, times g prime of x.
+
+In words — outside derivative evaluated at the inside, times derivative of the inside. If you set u equals g of x, and y equals f of u, leibniz notation makes it pop. D y over d x equals d y over d u, times d u over d x. The d u cancels — not formally, but it is the right mnemonic.
+
+Derivatives chain by multiplying. Every gradient flowing through every layer of a neural network is one long product of small derivatives. And that product is exactly what the chain rule computes.
+
+Example. F of x equals sine of x squared. Set u equals x squared, so f equals sine of u. Then d f over d x equals cosine of u, times two x. Which simplifies to two x times cosine of x squared.
+
+Now the derivatives of the staple functions. These are the building blocks. You should know them cold.
+
+The derivative of a constant is zero. The derivative of x to the n is n times x to the n minus one. The derivative of e to the x is e to the x — itself. The derivative of a to the x is a to the x, times the natural log of a. The derivative of natural log of x is one over x. The derivative of log base a of x is one divided by x times the natural log of a. The derivative of sine x is cosine x. The derivative of cosine x is negative sine x. The derivative of tangent of x is secant squared of x.
+
+The two most machine learning relevant ones are e to the x, which is its own derivative — the only function with this property up to a constant. And natural log of x, whose derivative is one over x. That is why log likelihoods are so much easier to differentiate than likelihoods.
+
+Now derivatives of every machine learning activation you have heard of. These are the derivatives you will write on whiteboards. Each has a clean closed form, and several have a beautiful property where the derivative can be expressed in terms of the original output. That makes backpropagation cheap.
+
+Sigmoid. Sigma of x equals one over one plus e to the negative x. Using the quotient rule, or rewriting as one plus e to the negative x, all raised to the negative one, then chain rule. The derivative simplifies to sigma of x, times the quantity one minus sigma of x.
+
+That is the magic property. The derivative is computable from the output, with one multiply and one subtract. During the forward pass we already have sigma of x, so the backward pass is free.
+
+Tanh. Closely related. The derivative of hyperbolic tangent of x equals one minus hyperbolic tangent squared of x. Same trick — derivative in terms of output.
+
+Relu. Defined as the maximum of zero and x. Piecewise linear, so its derivative is piecewise constant. One when x is positive, zero when x is negative, undefined exactly at zero. Frameworks pick a subgradient at zero — usually zero or one. In practice it never matters.
+
+Softplus. The natural log of one plus e to the x. Beautiful — the derivative of softplus of x is the sigmoid of x. The derivative of the smooth relu is the sigmoid. The shapes of the activation and the sigmoid line up perfectly.
+
+Gelu, swish, and silu have closed form derivatives too, but the formulas are longer. Gelu's derivative involves the standard normal density. Swish's derivative is sigma of x plus x times sigma of x, times one minus sigma of x. Frameworks compute them efficiently. You will not be writing them by hand at the whiteboard.
+
+Finally, finite differences — verifying any derivative numerically. Whenever you derive a gradient by hand, sanity check it numerically. There are three flavors, in increasing accuracy.
+
+Forward difference. F of x plus h, minus f of x, all divided by h. The error is order h. The most natural definition, but the least accurate.
+
+Backward difference. F of x, minus f of x minus h, divided by h. Same order h accuracy.
+
+Central difference. F of x plus h, minus f of x minus h, all divided by two h. Error is order h squared. Costs one extra function evaluation, but the accuracy jump is huge. This is the one to use for verification.
+
+A note on choosing h. Too large and you lose accuracy to truncation error, meaning the taylor remainder. Too small and floating point round off destroys you. The sweet spot for central differences in double precision is around h equals one times ten to the negative five, to one times ten to the negative six. For forward differences, one times ten to the negative eight is theoretically optimal but very brittle.
+
+The standard recipe for verifying a hand derived gradient. Compute the analytical value. Compute the central difference value. Check that the relative error is below one times ten to the negative five or so. Every neural network library has a grad check function that does exactly this.
+
+Let us close with where the single variable derivative shows up in machine learning. It shows up the moment you have one scalar parameter. Most of machine learning has many parameters at once, but the operations on each weight are still single variable derivatives — chained together.
+
+Backpropagation. Each layer's local gradient is a single variable, or vector, derivative — sigma prime, relu prime, tanh prime. The chain rule glues them together.
+
+Activation derivatives in code. Sigmoid, tanh, softplus all use the derivative from output trick. Store the forward output once, reuse it for the backward pass. Saves one multiply per neuron per step.
+
+Cross entropy plus softmax. Their gradient simplifies to prediction minus target. Because of how the derivative of natural log of sigma plays with the softmax's quotient structure. We derive it carefully in notebook five.
+
+Logistic regression derivative. The derivative of natural log of sigma of w dot x, with respect to w, equals the quantity one minus sigma of w dot x, times x. Same trick.
+
+Gradient checking in pytorch. Torch dot autograd dot grad check runs central differences against autograd's output during testing.
+
+Learning rate intuition. A step of size alpha in parameter space changes the loss by approximately negative alpha times the squared norm of the gradient — to first order. The first order there is the single variable derivative applied in each parameter direction.
+
+Smooth activations versus relu. Gelu, swish, and mish were all designed by playing with derivatives — wanting non monotone behavior, wanting derivatives that vary smoothly through zero.
+
+The next notebook covers partial derivatives and gradients. We lift everything we just built from one variable to many. And the gradient shows up as the multivariable answer to "which direction is uphill?"

@@ -1,0 +1,87 @@
+Welcome to notebook four — the chain rule and backpropagation. We met the chain rule briefly in notebook two. Here we write it the way it actually gets used.
+
+In single variable form, if y equals f composed with g of x, and we set u equals g of x, then d y over d x equals d y over d u, times d u over d x. The d u cancels — a mnemonic, not a proof, but it captures the truth. Derivatives multiply through compositions.
+
+Why does this scale? Suppose y equals f four composed with f three composed with f two composed with f one, applied to x. Chain the rule again and again. D y over d x equals d y over d u three, times d u three over d u two, times d u two over d u one, times d u one over d x. Each layer contributes one factor.
+
+A neural network is exactly this. Many layers stacked, each one a function applied to the previous one's output. Computing d y over d x means multiplying a sequence of layer local derivatives.
+
+That is it. There is nothing else to backpropagation conceptually. The rest is bookkeeping. In what order do you multiply, and how do you avoid recomputing the same thing twice? The answer is — right to left. And that ordering is what gives us reverse mode automatic differentiation.
+
+Now to the multivariable chain rule. A neural network's intermediate variables are not scalars. They are vectors — layer activations — and even matrices, for batched activations. The chain rule generalizes naturally.
+
+Setup. Let u equal g of x, a vector valued function of a vector. And y equal f of u, a scalar valued function of that vector. Then the partial of y with respect to x sub i equals the sum, over j, of the partial of y with respect to u sub j, times the partial of u sub j with respect to x sub i.
+
+Each path from x sub i, through some u sub j, to y, contributes a product of partials. Sum over all paths. This is the chain rule restated for multivariable composition.
+
+Compactly, in matrix form, the gradient of y with respect to x equals the transpose of the jacobian of g, times the gradient of y with respect to u. Where the jacobian of g is the matrix whose j i entry is the partial of u sub j with respect to x sub i. We will meet jacobians formally in the next notebook. For now think of jacobian transpose, times gradient, as the matrix vector version of "multiply by the layer local derivative."
+
+The picture for a deep network. Each layer is a function — u sub k plus one equals f sub k of u sub k and theta sub k. The gradient of the final loss l with respect to any intermediate u sub k is obtained by repeatedly multiplying by jacobian transposes, walking backward from the loss. That is, literally, backpropagation. The rest of this notebook makes it concrete on a tiny example.
+
+Now to computational graphs. A computational graph is a directed acyclic graph in which each node is an elementary operation, and each edge carries a value — the operation's output. Inputs flow in at the leaves. The final scalar, usually the loss, is at the root.
+
+For example, z equals the quantity x plus y, times the quantity y plus two. The graph has two addition nodes and one multiplication node. Notice that y contributes to z via two different paths. One through the x plus y branch. And one through the y plus two branch.
+
+There are two passes through the graph. The forward pass walks from leaves to root, computing each node's value. Standard evaluation.
+
+The backward pass — reverse mode autodiff, which is the same thing as backpropagation — starts at the root with the partial of z with respect to z equal to one. Then it walks from root to leaves. At each node, multiply the incoming gradient by the local derivative, and split it across the node's inputs. Sum contributions where paths recombine. In our example, y's gradient is the sum of two contributions — one from each path that y took.
+
+Why reverse mode? A neural network computes one scalar loss from many parameters — millions to billions. Reverse mode computes the gradient of one output with respect to all inputs in a single backward pass. The cost is the same as one forward pass.
+
+Forward mode would do the opposite. It computes the derivative of all outputs with respect to one input in a single sweep. That is the wrong asymmetry for machine learning, where we have far more parameters than losses.
+
+That asymmetry is the engineering insight. Everything that distinguishes a modern machine learning framework — pytorch, jax, tensorflow — is built around running reverse mode autodiff efficiently. Caching intermediate values, reusing them, parallelizing across devices.
+
+Now let us derive backpropagation on the smallest non trivial neural network. One hidden layer, sigmoid activation, scalar output, mean squared error loss.
+
+The architecture. The hidden activation h equals sigmoid of w one times x, plus b one. The output y hat equals w two transpose, times h, plus b two. Input x is in R d. Hidden width is m. The loss l is one half, times y hat minus y, squared.
+
+The goal. Compute the partial of l with respect to w one, b one, w two, and b two.
+
+The forward pass saves activations for the backward pass. First, compute z one — the pre activation — as w one times x, plus b one. Then h equals sigmoid of z one. Then y hat equals w two transpose, times h, plus b two. Finally, the loss l equals one half, times y hat minus y, squared.
+
+The backward pass applies the chain rule, walking from l back to the inputs. Start with the partial of l with respect to y hat. From the loss definition, that equals y hat minus y. Call this delta out.
+
+For the output layer, the partial of l with respect to w two equals delta out, times h. And the partial of l with respect to b two equals delta out by itself.
+
+Push the signal back into the hidden layer. The partial of l with respect to h equals delta out, times w two.
+
+Push through the sigmoid. Using the identity that the derivative of sigmoid of z equals sigmoid of z times the quantity one minus sigmoid of z — which equals h times one minus h — the partial of l with respect to z one equals the partial of l with respect to h, elementwise times h, elementwise times the quantity one minus h. Call this delta one.
+
+Finally, the partial of l with respect to w one equals delta one outer product with x. And the partial of l with respect to b one equals delta one by itself.
+
+That is it. Every neural network you train is one variant of this calculation, repeated for every layer.
+
+Now let us discuss the asymmetry between forward mode and reverse mode autodiff. Both compute exact derivatives by applying the chain rule. They differ in the direction of accumulation, and the choice has dramatic consequences for cost.
+
+Forward mode carries a derivative forward with each variable. At each node, push the chain rule forward.
+
+Forward mode's output is the partial of y with respect to x, for one fixed input x, versus all outputs y. Its cost is order n inputs forward sweeps — one per input. Forward mode is best when you have few inputs and many outputs.
+
+Reverse mode, which is backpropagation, does the forward pass storing intermediates, then runs one backward sweep accumulating gradients.
+
+Reverse mode's output is the partial of l with respect to theta, for one fixed scalar output l, versus all inputs theta. Its cost is order one backward sweep — one for the loss. Reverse mode is best when you have many inputs — millions of weights — and one output, the loss.
+
+Machine learning lives squarely in reverse mode territory. The price for reverse mode is memory. You must store every intermediate activation during the forward pass so the backward pass can use them. That is why training deep networks needs so much g p u r a m, and why techniques like gradient checkpointing — trading compute for memory by recomputing activations on demand — exist.
+
+In modern parlance, forward mode is called j v p, jacobian vector product. Reverse mode is called v j p, vector jacobian product. These are the primitives that pytorch and jax expose. Loss dot backward is literally a chain of v j p's.
+
+Let us close with where backpropagation appears in machine learning. It is the single most consequential algorithm in modern m l. Every training run is one application of it.
+
+Every neural network training step. Forward pass, compute loss, backward pass — that is the chain rule — and parameter update. That is the loop.
+
+Pytorch, jax, tensorflow. Their autograd engines build computational graphs — eagerly in pytorch, traced in jax — and run reverse mode autodiff. Loss dot backward traverses the graph applying the chain rule.
+
+Gradient checkpointing. Trade compute for memory by recomputing activations on demand during the backward pass, instead of storing them all. Crucial for training transformers with long context.
+
+Mixed precision training. Activations stored in float sixteen to save memory. Gradients computed and accumulated in float thirty two to preserve accuracy. The chain rule has to be carefully implemented across precisions.
+
+Differentiable programming. Any program written with differentiable primitives can be backpropagated through. Differentiable physics simulators, differentiable rasterizers, differentiable database queries. All chain rule on bigger graphs.
+
+Higher order gradients. Want the second derivative of l with respect to theta — the hessian? Run backpropagation twice. Once to get the gradient. Once more on the gradient as a function. Jax's grad of grad of f does this in one line.
+
+Implicit differentiation. When the forward pass involves solving an equation — optnet, model agnostic meta learning, deep equilibrium models — the implicit function theorem extends backpropagation through the solver.
+
+Reverse mode autodiff is not just for neural networks. Bayesian optimization uses it for hyperparameter gradients. Differentiable rendering uses it for scene reconstruction. Even s q l query optimizers have been trained with it.
+
+The next notebook covers jacobians, hessians, and matrix calculus. We formalize the jacobian and hessian objects we have been hand waving at, and build the matrix calculus identity table you will use on every whiteboard.

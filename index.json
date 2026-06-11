@@ -1,0 +1,32 @@
+{
+  "sections": [
+    {
+      "title": "Getting Started",
+      "notebooks": [
+        "01-intro-and-limits"
+      ]
+    },
+    {
+      "title": "Derivatives & Gradients",
+      "notebooks": [
+        "02-derivatives",
+        "03-partial-derivatives-and-gradients"
+      ]
+    },
+    {
+      "title": "Chain Rule & Vector Calculus",
+      "notebooks": [
+        "04-chain-rule-and-backpropagation",
+        "05-jacobians-hessians-matrix-calculus"
+      ]
+    },
+    {
+      "title": "Approximation, Optimization & Integration",
+      "notebooks": [
+        "06-taylor-series-and-approximations",
+        "07-optimization-and-convexity",
+        "08-integration-and-expectation"
+      ]
+    }
+  ]
+}

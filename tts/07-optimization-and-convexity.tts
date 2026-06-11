@@ -1,0 +1,97 @@
+Welcome to notebook seven — optimization and convexity. A stationary point of a differentiable function f from R n to R is any x star where the gradient of f at x star equals zero. In words, every partial derivative is zero. Locally, the function is flat.
+
+The first order necessary condition. If x star is a local minimum, or a local maximum, of f, then x star is a stationary point. Equivalently, gradient descent's only way to know it has converged is gradient equals zero — or within tolerance.
+
+The converse is not true. Stationary points include minima, maxima, saddle points, and weird degenerate cases. Just because the gradient is zero does not mean you are at a minimum. The whole drama of optimization in high dimensions — especially deep learning — is sorting which kind of stationary point you have found.
+
+To distinguish minima from maxima and saddles, look at the hessian — the topic of notebook five.
+
+The sufficient condition for a local minimum. If the gradient at x star is zero, and the hessian at x star is positive definite — meaning all eigenvalues are strictly positive — then x star is a strict local minimum.
+
+The sufficient condition for a local maximum. Same as above but the hessian is negative definite.
+
+A saddle point. If the hessian has both positive and negative eigenvalues, x star is a saddle. A minimum along some directions, a maximum along others. The function looks like a pringles chip.
+
+Degenerate cases. If the hessian is only positive semidefinite, with some zero eigenvalues, the second order test is inconclusive. You need higher order information.
+
+The hessian eigenvalue picture is the local geometry of the loss landscape. All eigenvalues large and positive — sharp minimum, a steep bowl, tends to generalize worse. All eigenvalues small and positive — flat minimum, a wide bowl, tends to generalize better. This is the basis of methods like sharpness aware minimization. And mixed signs — a saddle. The drag of high dimensional optimization.
+
+Now convexity. A function f from R n to R is convex if, for every pair of points and every t in zero to one, the value of f at the convex combination, t times x plus one minus t times y, is less than or equal to the convex combination of the values — t times f of x, plus one minus t, times f of y.
+
+Geometrically, the line segment between two points on the graph lies on or above the graph. The function is strictly convex if the inequality is strict whenever x is different from y.
+
+Two pleasant consequences of convexity. First, every local minimum is a global minimum. No bad local minima. You will never get stuck in the wrong valley. Second, stationary points are exactly the minima. Gradient equals zero is both necessary and sufficient.
+
+Tests for convexity. Two practical ones.
+
+The first order test. F is convex if and only if f of y is greater than or equal to f of x, plus gradient of f at x, dotted with y minus x, for every x and y. In words, the tangent plane sits everywhere on or below the graph.
+
+The second order test. F is convex if and only if the hessian of f at x is positive semidefinite for every x. This is the most used test in practice. You check that the hessian is p s d everywhere.
+
+Machine learning examples of convex functions. Linear regression with mean squared error loss. Logistic regression without regularization. Support vector machine hinge loss. Lasso and ridge regression. All convex.
+
+Non convex examples. Neural networks — the loss is non convex in the weights, with many local minima and many saddles. Yet they train. Why neural networks train despite non convexity is one of the most studied questions in m l theory. K means clustering — loss is non convex in the cluster centers, and local minima are real. Mixture models — non convex log likelihood.
+
+The story of modern machine learning is that non convex problems are not the catastrophe theory once feared. Practical gradient methods find good — if not globally optimal — solutions in spite of non convexity.
+
+Now to gradient descent. The vanilla algorithm. W at step t plus one equals w at step t, minus alpha, times the gradient of l evaluated at w at step t. Alpha is the learning rate, also called the step size. The intuition is direct from notebook three. Negative gradient is the direction of steepest descent. Alpha controls how far to step.
+
+A few convergence facts, informally. For a convex l with lipschitz gradient — bounded by a constant m — convergence is at rate one over t to the global minimum, if alpha is less than one over m. Faster with momentum. For strongly convex l, with hessian eigenvalues bounded below by some mu greater than zero, you get linear convergence — error shrinks by a constant factor each iteration. For non convex l, you get convergence to a stationary point under mild conditions. No promises about which one.
+
+Learning rate effects. Three regimes. Too small — convergence crawls. Just right — fastest convergence. For quadratic losses, the optimal alpha is approximately two divided by the sum of the smallest and largest hessian eigenvalues. And too large — the algorithm overshoots, diverges, or oscillates. The first order taylor approximation breaks down outside the trust radius.
+
+Stochastic gradient descent — s g d. Replace the full gradient with a mini batch estimate. Cheaper per step, noisier per step. The noise turns out to help. It lets you escape saddle points and bad local minima that exact gradient descent might get trapped near.
+
+Next, momentum and adam. Plain s g d takes a small step downhill at every iteration. Momentum lets the optimizer build up velocity in consistent directions — like a ball rolling down a valley. The velocity v at step t plus one equals beta, times v at step t, plus the current gradient. The update is w at step t plus one equals w at step t, minus alpha, times v at step t plus one. Beta is the momentum coefficient, usually zero point nine.
+
+Past gradients accumulate, decayed by beta, into the velocity, which then drives the step. The result — accelerated motion in directions where the gradient is consistent, dampened motion in directions where it oscillates. Polyak heavy ball is the original form. Nesterov momentum is a slightly smarter variant.
+
+Adam. Combines momentum with per parameter learning rates scaled by recent gradient magnitude. Roughly, it tracks two estimates. The first moment estimate, m, is an exponentially weighted average of the gradient. The second moment estimate, v, is an exponentially weighted average of the gradient squared, elementwise. The update divides m by the square root of v, plus a small epsilon to prevent division by zero. Bias correction at the start is applied to m and v.
+
+The key intuition. Parameters with consistently large gradients get smaller effective learning rates. Parameters with small gradients get larger ones. Adam adapts automatically to per parameter geometry.
+
+Adam is the default optimizer for most modern deep learning. S g d with momentum is still preferred in computer vision — c n n training — because it tends to find flatter minima.
+
+Both momentum and adam are still first order. They only use gradient information. But they accumulate gradients in ways that mimic second order methods cheaply.
+
+Now newton's method, revisited. Notebook six derived newton's update from the second order taylor expansion. W at step t plus one equals w at step t, minus the inverse hessian at w sub t, times the gradient at w sub t.
+
+Pros. Quadratic convergence near a minimum — much faster than first order methods. Scale invariant — newton's step ignores parameter rescalings. For a quadratic objective, newton converges in one step from any starting point.
+
+Cons, in machine learning. Memory. Storing the hessian is order n squared. With one billion parameters, that is one with eighteen zeros entries. Infeasible. Compute. Inverting the hessian is order n cubed. And it is not safe far from a minimum. If the hessian is not positive definite, newton's step may point uphill, or be enormous.
+
+Machine learning compromises. L b f g s, the limited memory b f g s, stores only the last m rank one updates to approximate the inverse hessian. Order m times n memory. Standard in classical optimization libraries. Natural gradient — replace the hessian with the fisher information matrix, which is positive semidefinite by construction and has nice properties for probability distributions. K fac and shampoo — block diagonal approximations to the hessian based on layer structure. Hessian free and conjugate gradient — compute hessian times v for vectors v via pearlmutter's trick, without forming the full hessian. And diagonal hessian methods — keep only the diagonal of the hessian. Adam approximates this with the expectation of the gradient squared, elementwise.
+
+For most deep learning, first order adam is good enough. Second order methods shine for smaller models, fine tuning, and convex sub problems inside larger pipelines.
+
+Now to saddle points — the real challenge in high dimensions. Classical optimization worried about local minima. In high dimensions, saddles are the real obstacle.
+
+A saddle point has a hessian with both positive and negative eigenvalues. With n parameters, picking a random stationary point, the probability that all n eigenvalues happen to be positive becomes astronomically small. So in deep networks, the overwhelming majority of stationary points are saddles.
+
+What does this mean for training? Pure gradient descent stalls near saddles. The gradient is small, but the saddle is not a minimum. S g d's noise helps escape by pushing parameters into directions of negative curvature. Momentum can power through saddle regions because it does not stop just because the gradient briefly vanishes. Second order methods can detect saddles by mixed eigenvalues and escape deliberately.
+
+The optimistic view, now standard in deep learning theory. In overparameterized networks, the loss landscape — though non convex — has a nice structure. Most local minima found by s g d are roughly equivalent, with similar loss. And the saddles, while abundant, can be escaped by noise or momentum. This is why deep networks train despite their non convexity. The loss landscape papers of the late twenty tens explored this in detail.
+
+The skeptical view. Sharpness versus flatness of minima matters. S g d's noise has implicit regularization effects that gradient descent does not. Learning rate schedules and warmup interact with curvature in ways still being understood. None of this should reduce your respect for empirical practice. But the math is real and rich.
+
+Let us close with where this appears in machine learning. Optimization is the thing that makes machine learning work. Every chapter of every modern textbook lives or dies by the algorithms in this notebook.
+
+Every training loop. Forward, loss, backpropagation, optimizer step. The optimizer is one of — s g d, s g d with momentum, adam, adam w, r m s prop, l b f g s, and so on.
+
+Learning rate scheduling. Cosine decay, linear warmup, one cycle — calculated reductions in alpha to navigate curvature regions. Theoretically motivated by the convergence rates above.
+
+Adam versus s g d. Convex and smooth settings favor s g d with momentum — it finds flat minima, which generalize better. Adam dominates in transformer training because it adapts to per parameter scale, which matters for layer normalization interactions.
+
+Sharpness aware minimization, s a m. Add a small perturbation step before computing the gradient, aiming to find flat minima with small hessian eigenvalues. Directly targets the second order geometry from this notebook.
+
+Trust region methods. Newton style methods that cap step size based on how well the quadratic taylor approximation matched reality. Used in classical reinforcement learning — t r p o.
+
+Convex optimization solvers. Linear regression, logistic regression, support vector machines, lasso — all convex, all solved with deterministic algorithms — interior point, coordinate descent, a d m m.
+
+L b f g s in classical machine learning. Default for medium scale logistic regression in scikit learn, for many maximum likelihood problems, and for fitting gaussian processes.
+
+Natural gradient and k fac. Used in reinforcement learning and second order deep learning experiments. Closer to newton, cheaper to apply.
+
+Loss landscape research. Mode connectivity, the lottery ticket hypothesis, the neural tangent kernel — all involve studying the geometry of the loss empirically. Convexity language is part of the vocabulary even where convexity itself does not apply.
+
+The next notebook covers integration and expectation. We close the calculus repo with the integration half of the fundamental theorem of calculus, the change of variables formula, and expectation as an integral. This bridges into the probability and statistics repo.

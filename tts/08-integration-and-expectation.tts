@@ -1,0 +1,105 @@
+Welcome to notebook eight — integration and expectation. If derivatives measure how a function changes, integrals measure how a function accumulates. The defining picture — the definite integral of f from a to b — is the signed area between the curve f and the x axis on the interval from a to b. Signed because area below the axis counts negatively.
+
+Formally, we approximate this area by chopping the interval into thin rectangles and summing — a riemann sum. The integral of f from a to b equals the limit, as n approaches infinity, of the sum, from i equals one to n, of f evaluated at some sample point in the i-th rectangle, times the rectangle width delta x.
+
+Just as limits gave us the derivative, limits of sums give us the integral. They are the two sides of calculus.
+
+For machine learning. Every time you write down an expectation — for example, the expectation of g of x, equals the integral of g of x, times p of x, d x — you are accumulating values of g weighted by the density p. Integrals are how we average over continuous distributions.
+
+Now the fundamental theorem of calculus. The two halves of calculus — differentiation and integration — are bound together by the fundamental theorem of calculus, abbreviated f t c.
+
+Part one says integration undoes differentiation. Define capital f of x as the integral, from a to x, of f of t, d t. Then the derivative of capital f of x equals f of x. In other words, the derivative of "the area accumulated so far" is just the height of the curve at the right edge. Picture the area function growing as you slide the right edge to the right.
+
+Part two says differentiation undoes integration. If capital f is any antiderivative of f — meaning capital f prime of x equals f of x — then the integral, from a to b, of f of x, d x, equals capital f of b, minus capital f of a. So to compute an integral, find a function whose derivative is f, evaluate it at the endpoints, subtract. This is how every elementary integral you have ever computed was done.
+
+A practical implication. Integration and differentiation are inverse operations in the same sense that addition and subtraction are. The catch — many functions have derivatives you can write down in closed form, but no closed form antiderivative. E to the negative x squared, the gaussian density, is the classic example. It has no elementary antiderivative, but its integral is the foundation of probability theory. Numerical integration, or special functions like the error function, handles this.
+
+For machine learning. Most loss functions are easy to differentiate but hard to integrate. That is why training is gradient based, meaning differentiation. While inference and bayesian methods rely on tricks like sampling and variational approximations to avoid intractable integrals.
+
+Next, substitution — the chain rule, in reverse. The substitution rule is what you get by reading the chain rule backwards. If u equals g of x, and d u equals g prime of x, d x, then the integral of f of g of x, times g prime of x, d x, equals the integral of f of u, d u.
+
+In words. Spot the form f of g of x, times g prime of x, inside an integrand. Substitute u equals g of x. The integral becomes simpler.
+
+Example. Integrate two x, times e to the x squared. Let u equal x squared, so d u equals two x, d x. Then the integral of two x times e to the x squared, d x, equals the integral of e to the u, d u, which is e to the u plus a constant, which is e to the x squared, plus a constant.
+
+The differentials' bookkeeping is the same cancellation that makes leibniz notation pop in the chain rule.
+
+Now change of variables — the multivariable upgrade. Generalize to integrals over regions in R n. If capital phi from R n to R n is a smooth bijection — a coordinate change — then for any integrable f, the integral of f of y, d y, over the image region phi of omega, equals the integral of f of phi of x, times the absolute value of the determinant of the jacobian of phi at x, d x, over the original region omega.
+
+The absolute value of the determinant of the jacobian factor compensates for how the coordinate change locally stretches volumes. We saw exactly this in the linear algebra repo. The absolute value of the determinant of a is the volume scaling factor of a linear map.
+
+This formula is the engine of normalizing flows in deep learning, which we will get to in a moment.
+
+Now expectation — the integration most used in machine learning. The expectation, also called the expected value or mean, of a random variable x with probability density p of x, is the integral of x times p of x, d x.
+
+For a function g of that random variable, the expectation of g of x equals the integral of g of x, times p of x, d x.
+
+This is the operation of probability and statistics. Variance, covariance, k l divergence, cross entropy, evidence — all defined as expectations.
+
+A few important expectations to recognize. The mean of a gaussian. If x is distributed as normal with mean mu and variance sigma squared, then the expectation of x equals mu. The gaussian density integrated against x returns the mean exactly. Computed analytically by completing the square.
+
+Variance. The variance of x equals the expectation of x minus mu, squared. Which also equals the expectation of x squared, minus mu squared. Both the expectation of x squared and the expectation of x are themselves integrals against p of x.
+
+Expectation of a constant is just the constant. Trivial — the integral of c times p of x is c times the integral of p, which equals c.
+
+Linearity of expectation. The expectation of a x plus b y equals a, times the expectation of x, plus b, times the expectation of y. Always — even when x and y are dependent. Hard to overstate how often this matters.
+
+The tower property. The expectation of the conditional expectation of x given y, equals the expectation of x. Conditional expectation iterated gives back the unconditional one.
+
+For machine learning. Every loss you optimize is approximately an expectation — l of w equals the expectation, over data x comma y, of the per sample loss. The training set is a monte carlo sample from this expectation.
+
+Now change of variables for probability density. A core trick in modern generative modeling. If x has density p sub x of x, and y equals f of x, where f is a smooth invertible function, then y has density p sub y of y, equal to p sub x of f inverse of y, times the absolute value of the determinant of the jacobian of f inverse at y.
+
+Equivalently, if we write x equals f inverse of y, then p sub y of y equals p sub x of x, divided by the absolute value of the determinant of the jacobian of f at x.
+
+In log form, which is what is used in practice. Log p sub y of y equals log p sub x of x, minus the log of the absolute value of the determinant of the jacobian of f at x.
+
+Why is this huge? A normalizing flow is a stack of smooth invertible neural network layers — f equals f n composed with all the way down to f one — that maps a simple base distribution, typically standard gaussian, to a complex data distribution. The likelihood of any data point under the model is computed exactly using this formula. No sampling, no approximation.
+
+The catch is the log determinant of the jacobian term, which must be tractable. Architectures like real n v p, glow, and neural spline flows are engineered specifically so that this determinant is cheap to compute — usually by making the jacobian triangular.
+
+This is the cleanest place in machine learning where multivariable calculus shows up exactly, with no approximations.
+
+Now monte carlo integration. When you cannot compute an integral analytically, and you cannot even do it well numerically — for example, with high dimensional integrals where grid based methods explode — you can sample.
+
+If you have independent and identically distributed samples x one, x two, all the way to x n, drawn from p, then by the law of large numbers, the average of g of x sub i, over i from one to n, converges to the expectation of g of x, which equals the integral of g of x, times p of x, d x.
+
+This is monte carlo integration. The error shrinks like one over the square root of n. Slow, but independent of dimension. That is why monte carlo integration is the default for high dimensional problems.
+
+The biggest machine learning examples.
+
+Stochastic gradient descent itself. A mini batch is a monte carlo sample of the loss expectation. The gradient computed from one batch is an unbiased estimator of the true gradient.
+
+Reinforce and policy gradients. The gradient of the expected return is estimated by sampling actions and weighting by the log policy gradient.
+
+Variational inference and the reparameterization trick. The expectation, over z drawn from a variational distribution q phi, of log p of x given z, is estimated by sampling z. And the reparameterization trick lets you back propagate through the sampling step.
+
+Diffusion models. The training loss is an expectation over noise scales and over noise samples. A double monte carlo.
+
+Variance reduction is the practical art of monte carlo integration — importance sampling, control variates, antithetic sampling, common random numbers. All techniques to lower the variance of the estimator and require fewer samples for the same accuracy.
+
+Let us close with where integration appears in machine learning. Integration is the bridge between calculus and probability. And probability is everywhere in machine learning.
+
+Expectation losses. The loss l of w equals the expectation, over data, of the per sample loss. Stochastic gradient descent samples this expectation. Each mini batch is a monte carlo estimate.
+
+K l divergence. The k l divergence from p to q equals the integral of p of x, times log of p of x divided by q of x, d x. Used in variational inference, distillation, language modeling — where cross entropy equals k l divergence plus entropy — and reinforcement learning, where t r p o and p p o have k l constraints.
+
+Cross entropy and log likelihood. Log p of x given theta is the integrand in maximum likelihood training of any probabilistic model.
+
+The evidence lower bound, e l b o. Used in variational auto encoders and variational inference. The e l b o of phi equals the expectation, over q phi, of log p of x and z, minus log q phi of z. The expectation is estimated by sampling.
+
+Normalizing flows. Exact likelihood via the change of variables formula. Glow, real n v p, neural spline flows, and f f j o r d all rest on this.
+
+Diffusion models. The forward process integrates stochastic differential equations adding noise. The reverse process integrates, or samples from, the score based reverse s d e. Training loss is an expectation, computed via monte carlo.
+
+Bayesian inference. The marginal likelihood, p of d, equals the integral of p of d given theta, times p of theta, d theta — an integral over parameters. Almost always intractable. Tackled by markov chain monte carlo, variational inference, or laplace approximation from notebook six.
+
+Importance sampling. Estimate an expectation under p by sampling from a different distribution q, and reweighting by p over q. Foundational for off policy reinforcement learning.
+
+Score based generative modeling. The score is the gradient of a log density. Sampling is integrating a stochastic process driven by the score.
+
+Probabilistic programming, in libraries like pyro, num pyro, and stan. Express models. Compile to gradients of log likelihoods. Integrate by markov chain monte carlo or variational inference.
+
+That closes the calculus repo. From the limit, as h approaches zero, of f of x plus h minus f of x, all divided by h — in notebook one — to normalizing flows in notebook eight.
+
+Next on the math foundations roadmap is probability and statistics. Distributions, maximum likelihood estimation, expectation made formal, hypothesis testing, and the probabilistic vocabulary that all of modern machine learning is written in. Then the machine learning repo finally builds on top of all three pillars — linear algebra, calculus, and probability.

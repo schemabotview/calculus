@@ -1,0 +1,91 @@
+Welcome to notebook five — jacobians, hessians, and matrix calculus. The gradient packaged partial derivatives of a scalar valued function into a vector. The jacobian is the same idea for a vector valued function.
+
+If f is a function from R n to R m, with components f one through f m, then its jacobian is the m by n matrix whose i j entry is the partial of f sub i with respect to x sub j. Each row is the gradient of one output component. Each column corresponds to one input variable. The shape — outputs by inputs — is the convention this repo follows.
+
+Three special cases worth memorizing. When f goes from R to R, the jacobian is the one by one matrix containing just f prime of x — the ordinary derivative. When f goes from R n to R, meaning f is scalar valued, the jacobian is a one by n row vector — the gradient, transposed. When f goes from R n to R m, the jacobian is the full m by n matrix.
+
+The gradient and the jacobian are the same object viewed differently. The gradient is the row of the jacobian when there is only one output. Conventions for "is the gradient a row or a column?" cause endless confusion. We use column vectors for gradients in prose and turn them into rows when stacking into a jacobian.
+
+The geometric meaning of the jacobian. The jacobian is the best linear approximation of f near a point x. Locally, f of x plus delta x is approximately f of x, plus the jacobian times delta x. Notebook six on taylor series makes this precise.
+
+A word on layout conventions. A surprising amount of confusion in matrix calculus comes from one ambiguity. Is the partial of y with respect to x shaped like the output, or like the input? Two conventions coexist.
+
+Numerator layout — the partial of y with respect to x has the same shape as y, the numerator. The gradient of a scalar with respect to a vector is a row vector. Used in most physics and math textbooks.
+
+Denominator layout — the partial of y with respect to x has the same shape as x, the denominator. The gradient of a scalar with respect to a vector is a column vector. Used in most machine learning textbooks.
+
+This repo uses denominator layout. Gradients are columns, matching how pytorch and jax expose them. So if l is a scalar and w is a vector, the partial of l with respect to w is a column vector with the same shape as w.
+
+For a jacobian of a vector valued function from R n to R m, we keep it m by n — output by input. This is the most common jacobian convention and matches numpy, scipy, and pytorch tools.
+
+Always sanity check shapes. Whatever convention you use, every matrix calculus identity has a shape only test. If the shapes do not line up after applying the identity, the identity is wrong, or you mistyped it. When in doubt, write the scalar by scalar definition first.
+
+Now let us go through the matrix calculus cheat sheet. These identities are the ones you will use over and over. Each is straightforward to derive by writing out the scalar definition and restacking. But in practice you should memorize them.
+
+The most important ones, all in denominator layout. The gradient of a transpose x, with respect to x, equals a. A linear form, and its gradient is the constant vector. The gradient of x transpose, times capital a, times x, with respect to x, equals capital a plus a transpose, times x. Quadratic form. Symmetric capital a gives twice a times x. The gradient of the squared L two norm of x equals two x. A special case of the previous identity with capital a equal to the identity. The gradient of the squared L two norm of x minus c equals two times x minus c. Squared distance to a point.
+
+For jacobians of vector valued operations. The jacobian of capital a times x equals capital a. The jacobian of the identity map is the identity matrix. The jacobian of f applied elementwise is the diagonal matrix with f prime evaluated at each entry along the diagonal.
+
+For products and inverses where capital a depends on x. The derivative of the trace of a transpose times b, with respect to a, equals b. The derivative of the log determinant of a, with respect to a, equals the transpose of a inverse. This identity shows up in gaussian likelihoods and normalizing flows. The derivative of a inverse, with respect to a, equals negative a inverse, times the perturbation, times a inverse. Used in implicit function theorem derivations.
+
+Most useful in practice are the first two — the linear form and the quadratic form. Linear regression, ridge regression, every linear layer backward pass — all rest on these two identities.
+
+Now the hessian. The hessian of a scalar function f from R n to R is the matrix of all second order partial derivatives. The i j entry of the hessian is the partial squared of f, with respect to x sub i and x sub j. The hessian is n by n.
+
+By clairaut's theorem — mixed partials commute when they are continuous — the hessian is symmetric. Same content above and below the diagonal.
+
+Two ways to think about the hessian. First, as the jacobian of the gradient. Take the gradient of f, which is a function from R n to R n, and jacobian it. Second, as the quadratic coefficient matrix in the taylor expansion. Locally, f of x plus delta is approximately f of x, plus gradient of f, dotted with delta, plus one half, times delta transpose, times hessian, times delta. We will do this carefully in notebook six.
+
+Geometric meaning at a critical point, where the gradient is zero. If the hessian is positive definite — all eigenvalues are positive — we have a local minimum, like the bottom of a bowl. If the hessian is negative definite — all eigenvalues negative — a local maximum, like the top of a dome. If the hessian is indefinite — mixed signs — a saddle point, like a pringle chip. If the hessian is only semidefinite or singular, we are at a degenerate critical point and we need higher order analysis.
+
+These are the second order conditions for optimization, covered in notebook seven. They are the lens through which newton's method, b f g s, l b f g s, and natural gradient all justify themselves.
+
+A word on cost. For a model with n parameters, the hessian is n by n. Storing it requires order n squared memory. Inverting it requires order n cubed time. For a modern network with billions of parameters this is impossible. Machine learning usually settles for hessian approximations — diagonal, block diagonal, low rank, or hessian vector products.
+
+Now let us revisit the m s e gradient cleanly. Notebook three derived this with effort. With the identity table, we get it in three lines.
+
+L of w equals one over n, times the squared L two norm of y minus x w. Expanding, this is one over n, times the quantity y transpose y, minus two times w transpose, times x transpose y, plus w transpose times x transpose x, times w.
+
+Differentiate term by term. Y transpose y does not depend on w — gradient zero. W transpose, times x transpose y, is a linear form, and its gradient is x transpose y. W transpose, times x transpose x, times w, is a quadratic form with the symmetric matrix x transpose x — gradient is two times x transpose x, times w. Combine, and the gradient of l with respect to w equals two over n, times x transpose, times the quantity x w minus y.
+
+The hessian is just as clean — it is two over n, times x transpose x. Constant. Symmetric. Positive semidefinite. That is why linear regression is convex and why the closed form solution exists.
+
+Now to the single cleanest gradient in machine learning, and the one most often asked in interviews. The gradient of softmax plus cross entropy.
+
+The softmax for a logit vector z, with K components, gives probabilities p sub i equal to e to the z sub i, divided by the sum over k of e to the z sub k.
+
+The cross entropy loss against a one hot target y, where y sub t equals one for the true class t, and zero elsewhere, is l equals negative the sum, over i, of y sub i, times log p sub i. Which simplifies to negative log p sub t.
+
+The goal is to compute the partial of l with respect to z sub i. We need two derivatives — the softmax's own jacobian, and the chain rule through the log.
+
+The softmax jacobian is — the partial of p sub i with respect to z sub j equals p sub i, times the quantity kronecker delta i j, minus p sub j. Where kronecker delta i j is one if i equals j, and zero otherwise.
+
+Now the cross entropy gradient. By the chain rule, the partial of l with respect to z sub j equals negative the sum, over i, of y sub i, divided by p sub i, times p sub i, times kronecker delta i j minus p sub j. The p sub i cancels. Distribute, and use the fact that the y sub i sum to one.
+
+The result is — the partial of l with respect to z sub j equals p sub j, minus y sub j.
+
+So the gradient of softmax cross entropy, with respect to the logits, is — prediction minus target. That is the entire backward pass through softmax and cross entropy. This identity is why classification networks are so easy to train. The gradient is meaningful, bounded, and trivially computable.
+
+Let us close with where this appears in machine learning. Matrix calculus is the language every deep learning paper is written in. And the cheat sheet shows up in every backward pass.
+
+Backpropagation through a linear layer. Y equals w times x, plus b. Then the partial of l with respect to w equals the partial of l with respect to y, outer product with x. The partial of l with respect to x equals w transpose, times the partial of l with respect to y. The partial of l with respect to b equals the partial of l with respect to y. Each is a one line application of an identity above.
+
+Softmax plus cross entropy. The gradient equals p minus y. One of the most used facts in machine learning. It is why classification networks train cleanly.
+
+M s e gradient. Direct application of the quadratic form identity and the linear form identity.
+
+Ridge regularization, also called weight decay. Adding lambda times the squared norm of w to a loss adds two lambda times w to the gradient. That is why weight decay is, in effect, just rescaling weights toward zero.
+
+Hessian based optimization. Newton's method updates w to w minus the inverse hessian, times the gradient. L b f g s is the low memory hessian approximation. Natural gradient replaces the hessian with the fisher information matrix. All notebook six and seven material.
+
+Gauss newton and levenberg marquardt. Use the jacobian of the residual function to approximate the hessian, for least squares problems.
+
+Trust region methods. Bound how far you trust the local quadratic approximation.
+
+Influence functions. Compute how a single training point would shift the model's parameters. The formula involves the inverse hessian.
+
+Normalizing flows. Train the likelihood — log p of x equals log p of z, plus log of the absolute value of the determinant of the jacobian of f at x. The log determinant of the jacobian is the heart of every flow architecture.
+
+Implicit function theorem, used in m a m l, opt net, and deep equilibrium models. Differentiate through fixed point or argmin operations using the negative inverse hessian, times the gradient.
+
+The next notebook covers taylor series and approximations. We make the "locally f looks like a line" intuition precise, derive newton's method properly, and preview the laplace approximation.

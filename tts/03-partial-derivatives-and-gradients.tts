@@ -1,0 +1,81 @@
+Welcome to notebook three — partial derivatives and gradients. In machine learning, parameters come in fleets. A linear regression has d weights and one bias. A small convolutional network has hundreds of thousands. A modern large language model has hundreds of billions. The loss l is one scalar number, but it depends on all of them at once. We write it as l of w, where w is a vector.
+
+Single variable calculus asked one question. If I nudge x, how does f of x change? The multivariable version asks two. If I nudge one weight w sub i, how does l change? That is a partial derivative. And, if I nudge all the weights along some direction u, how does l change? That is a directional derivative.
+
+The gradient packages all the partial derivatives into a single vector. And that vector secretly knows the answer to the directional question for every direction at once. That is the whole story of this notebook.
+
+Let us start with the partial derivative. The partial derivative of f of x one through x n, with respect to x sub i, is what you get by treating all the other variables as constants, and differentiating like in notebook two.
+
+Symbolically, it is the limit, as h approaches zero, of f evaluated with x sub i replaced by x sub i plus h, minus f evaluated normally, all divided by h.
+
+The curly d, sometimes called the partial symbol, distinguishes "I am varying only one of several variables" from the straight d, which means "I am varying the variable." Mechanically, the rules from notebook two still apply. Treat everything except x sub i as a constant.
+
+An example. F of x comma y equals x squared, plus two y squared, plus x times y. The partial with respect to x, treating y as constant, is two x plus y. The partial with respect to y, treating x as constant, is four y plus x.
+
+A few notation flavors. Partial f over partial x sub i. F sub x sub i. D sub i applied to f. Partial sub i applied to f. All the same thing. In handwritten math you will often see f sub x as shorthand for the partial with respect to x.
+
+The numerical version uses the same finite differences as notebook two, but nudging only one coordinate at a time. We will lean on this for verification throughout.
+
+Now bundle the partial derivatives into a single column vector, and you get the gradient. Written as upside down triangle f, the symbol upside down triangle is called nabla, or del. The gradient is a vector valued function. At each point x in R n, it returns a vector in R n.
+
+For our function f of x comma y equals x squared plus two y squared plus x y, the gradient is the column vector with two x plus y on top, and four y plus x on the bottom. At the point one comma one, the gradient is three comma five.
+
+There are two readings of the gradient. Algebraically, the gradient is a list of slopes — one for each coordinate axis. It tells you how f changes if you wiggle along each axis independently. Geometrically, the gradient is an arrow at every point. Its direction points uphill the steepest way, and its length tells you how steep that climb is. We will prove this in a moment. The second reading is where all of machine learning optimization sits.
+
+Next, the directional derivative. Partial derivatives measure slope along the coordinate axes. The directional derivative asks the same question along any direction. The directional derivative of f at x, in the direction u, is the limit, as h approaches zero, of f of x plus h u, minus f of x, all divided by h. Where u is a unit vector telling you which way to step.
+
+Here is the beautiful identity. The directional derivative of f in direction u equals the gradient of f, dotted with u. The directional derivative is just a dot product between the gradient and the direction.
+
+So once you know the gradient, you know the slope in every possible direction. No need to recompute anything.
+
+In particular, the partial derivatives are special cases. Take u to be the i-th standard basis vector, and the dot product picks out the i-th component of the gradient — which is the partial with respect to x sub i. Consistent.
+
+Now the main event — steepest ascent, and why gradient descent uses negative gradient. Given the identity that the directional derivative equals the gradient dotted with u, ask the question — over all unit vectors u, which one makes this dot product largest?
+
+From notebook two of the linear algebra repo, the dot product equals the norm of the gradient, times the norm of u, times cosine of theta. Since u has unit norm, that simplifies to the norm of the gradient, times cosine theta. The maximum over theta is achieved at theta equals zero, meaning u points in the same direction as the gradient.
+
+So — the gradient points in the direction of steepest ascent. Its magnitude is the slope in that direction.
+
+The minimum, on the other hand, is at theta equals pi, where u points opposite to the gradient. That direction is the steepest descent, and its slope is negative the norm of the gradient. This is the whole reason gradient descent works. If you want to make a loss l go down as fast as possible, take a small step in the direction of negative gradient of l.
+
+The algorithm in one line. W at step t plus one equals w at step t, minus alpha, times the gradient of l evaluated at w at step t. Alpha is called the learning rate. That is the entire backbone of training every neural network on earth. Notebook seven unpacks the variants — momentum, adam, and friends — but they all sit on top of this one update.
+
+Next, level sets and orthogonality. A level set of f is the set of all x where f of x equals some constant c. In two dimensions, level sets are contour lines, like the contours you see on topographic maps. In three dimensions, they are surfaces. They are the lines or surfaces on which f is flat — no change as you walk along them.
+
+The clean geometric fact. The gradient is orthogonal to the level set passing through any point.
+
+Quick proof. Walk along the level set. By definition, f does not change, so the directional derivative along the level set direction is zero. Which means the gradient dotted with the direction vector is zero. That is exactly the definition of orthogonality.
+
+Two machine learning payoffs of this fact. First, loss landscapes. Contour plots of l of w show you the geometry of training. The gradient is always perpendicular to the contour you are standing on, pointing toward higher loss. Gradient descent takes you orthogonal to the contours, cutting straight toward the minimum.
+
+Second, constrained optimization, also known as lagrange multipliers. If you minimize f subject to a constraint g of x equals zero, the optimum is where the gradient of f is parallel to the gradient of g. This is because both must be orthogonal to the constraint surface, and parallel gradients mean their directions of steepest ascent line up. This idea is the seed of support vector machines and many regularization derivations.
+
+Let us close the math with a worked example — the gradient of m s e for linear regression. This is the calculation that runs inside every linear regression library.
+
+With data matrix x of shape n by d, target vector y in R n, and weights w in R d, the mean squared error loss is one over n, times the squared L two norm of y minus x times w. Expanding the squared norm gives one over n, times the quantity y transpose y, minus two times w transpose, times x transpose, times y, plus w transpose, times x transpose x, times w.
+
+We differentiate piece by piece. The gradient of w transpose x transpose y, with respect to w, is just x transpose y — gradient of a linear form is the constant vector. The gradient of w transpose, times x transpose x, times w, with respect to w, is two times x transpose x, times w — gradient of a quadratic form with a symmetric matrix is two times the matrix, times w.
+
+Combining gives the gradient of l with respect to w equals two over n, times the quantity x transpose x w, minus x transpose y. Which factors as two over n, times x transpose, times the quantity x w minus y.
+
+Setting this gradient to zero recovers the normal equations from the linear algebra repo. Or, if we step iteratively along the negative gradient, that is gradient descent for linear regression — the simplest possible training loop.
+
+Let us close with where you see partial derivatives and gradients in machine learning. They are the single most used object in all of machine learning. Every backward pass produces one. Every optimizer consumes one.
+
+Gradient descent. Every training loop is w gets updated to w minus alpha, times the gradient of l. The directional derivative is maximized along the gradient direction. That fact is the whole reason this works.
+
+Stochastic gradient descent, s g d. Same update, but the gradient of l is approximated using a mini batch of samples instead of the full dataset. Way cheaper, and the noise turns out to help escape saddle points.
+
+Vanishing and exploding gradients. When the norm of the gradient is near zero, training stalls. When it explodes, weights blow up. Gradient clipping caps the magnitude by scaling the gradient down whenever its norm exceeds a threshold.
+
+Saliency maps and integrated gradients. Use the partial of l with respect to the input x, not the weights, to explain which pixels matter for a prediction.
+
+Adversarial examples. X adversarial equals x plus epsilon, times the sign of the gradient of l with respect to x. You perturb the input in the direction that increases the loss the most. The clearest demonstration of "the gradient points uphill."
+
+Lagrangians and constrained optimization. Support vector machines, normalizing flows with constraints, and lots of physics informed neural networks all use lagrange multipliers, which leans on the fact that the gradient is perpendicular to the constraint surface.
+
+Policy gradients in reinforcement learning. The gradient of the expected return, with respect to the policy parameters, equals the expectation of the gradient of log policy, times the reward. The policy gradient theorem is literally a multivariable derivative.
+
+Implicit differentiation. Sometimes you want gradients through optimization itself — for example, in differentiable convex layers, or in meta learning. The implicit function theorem extends the partial derivative apparatus to these cases.
+
+The next notebook covers the chain rule and backpropagation. We lift the gradient from "what is the slope of l of w?" to "how do I efficiently compute the gradient when l is one hundred layers deep?" The chain rule is the answer. And backpropagation is the algorithm.

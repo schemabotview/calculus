@@ -1,0 +1,87 @@
+Welcome to the calculus notebook. Linear algebra gave us vectors, matrices, and the linear models built from them. Calculus is the toolkit for everything that changes. And learning is all about change. Every weight update in every machine learning model is, at its heart, a calculus question.
+
+Calculus does four jobs in machine learning. And the eight notebooks of this repo each serve at least one of them.
+
+The first job is to find minima of loss functions. Every training procedure is the same procedure. Write down a scalar loss. Compute its gradient with respect to the parameters. Take a step downhill. Repeat. The whole machinery of gradient descent, momentum, adam, learning rate schedules, and second order methods is calculus. It is how to use derivative information to find good parameters.
+
+The second job is to measure sensitivity. If I nudge this input by a tiny amount, how much does the output change? That is the derivative. Generalized to many inputs and many outputs, it is the jacobian. In machine learning this question shows up as feature importance, adversarial robustness, influence functions, model interpretation, and integrated gradients.
+
+The third job is to approximate complex things with simple ones. A neural network is a complicated function. But near any single point, calculus lets us approximate it with a linear function — the first order taylor expansion — or a quadratic function — the second order expansion. Newton's method, the laplace approximation, variational inference, and most theoretical results about training dynamics rely on this trick.
+
+The fourth job is to aggregate over continuous distributions. What is the average loss across all possible inputs? That is an integral. Expectation, k l divergence, the evidence lower bound in variational inference, and the change of variables formula in normalizing flows — all integrals in disguise.
+
+Memorize those four jobs. They are the entire reason calculus shows up in machine learning.
+
+Now let us preview the roadmap. We start with the foundations and build out toward the operations a real training loop uses every microsecond.
+
+This notebook covers limits and continuity, the language calculus is written in. Then derivatives, where we do single variable derivatives, the rules — product, quotient, chain — and the derivatives of every activation function you have heard of. Then partial derivatives and gradients, where we move into many dimensions and meet the gradient as the direction of steepest ascent. Then the chain rule and backpropagation, where we scale the chain rule from scalars to vectors to matrices and derive backprop on a tiny network end to end. Then jacobians, hessians, and matrix calculus, the vector valued and second derivatives, with the identities you will write on whiteboards in interviews. Then taylor series and approximations, the linear and quadratic local approximations that power newton's method and variational inference. Then optimization and convexity, where we study gradient descent variants, convexity, second order conditions, and saddle points. And finally integration and expectation, the bridge into probability and statistics, and the foundation for k l divergence and normalizing flows.
+
+By the end you will be able to derive backpropagation from scratch, explain why adam differs from s g d, and read the gradient flow equations behind modern training papers.
+
+Now let us define our first formal concept — the limit. A limit answers the question — what value does f of x get arbitrarily close to as x gets arbitrarily close to a, without x necessarily ever reaching a?
+
+We write this as — the limit, as x approaches a, of f of x, equals L.
+
+The point of the limit notation is that we never substitute x equals a directly. We only care about behavior in the neighborhood of a. That distinction matters in three settings.
+
+First, when f is undefined at a. For example, f of x equals sine of x divided by x, at x equals zero, is the form zero divided by zero. But the limit, as x approaches zero, of sine of x divided by x, equals one. The function has a removable hole that the limit fills in.
+
+Second, when f is defined at a, but the limit disagrees with f of a. This is called a discontinuity.
+
+Third, when f explodes near a. The limit is plus or minus infinity, or simply does not exist.
+
+There is a formal epsilon delta definition that says — for every desired closeness epsilon greater than zero of f of x to L, there is a tightness delta greater than zero such that the distance from x to a being less than delta forces the distance from f of x to L to be less than epsilon. We will not push on the formalism. For machine learning, the intuition of "you can get as close as you want" is what carries through.
+
+The single most important limit in this entire repo is the one that defines the derivative. F prime of x equals the limit, as h approaches zero, of f of x plus h, minus f of x, all divided by h. Notebook two is the next fourteen cells unpacking this. Today we just confirm we can read it.
+
+Next, continuity. A function f is continuous at a point a if the limit, as x approaches a, of f of x, equals f of a. In words — the limit exists, the function is defined at a, and the two agree. No holes, no jumps, no spikes.
+
+A function is continuous on an interval if it is continuous at every point in the interval. Polynomials, exponentials, logarithms, sine, cosine, hyperbolic tangent, sigmoid, and softplus are continuous everywhere they are defined.
+
+Why does machine learning care about continuity? Continuous functions do not have to be differentiable, but discontinuous ones definitely are not. Three concrete examples that show up in modern architectures.
+
+First, the step function — the old perceptron's output — is discontinuous at zero. Its derivative is zero everywhere it exists and undefined where it jumps. Gradient descent has nothing to work with. This is the reason historical neural networks could not learn.
+
+Second, sigmoid and hyperbolic tangent are continuous and differentiable everywhere. That is what made backpropagation possible in the first place.
+
+Third, relu, which is the maximum of zero and x, is continuous everywhere but not differentiable at x equals zero. It has a corner. In practice, frameworks just pick the subgradient zero or one at zero and move on. It works because we almost never hit exactly x equals zero numerically. But the corner is real. And it is why smooth alternatives like gelu, swish, and mish exist — they are relu with the kink rounded off.
+
+The distinction between continuity, meaning no jumps, and differentiability, meaning smooth and having a defined slope, becomes the central tension of the next notebook.
+
+Now we move to limits at infinity. Limits do not have to be at finite points. We can also ask what happens as x goes to plus infinity, or to minus infinity.
+
+For the sigmoid function, defined as one divided by one plus e to the minus x, the limit as x approaches plus infinity is one, and the limit as x approaches minus infinity is zero. The function saturates. It gets stuck against its asymptotes.
+
+This is not just trivia. It is the original sin of deep learning. When the magnitude of x is large, sigmoid of x is nearly flat. Its slope is close to zero. Backpropagation multiplies the slopes of every layer's activation. If many layers are saturated, you multiply a chain of nearly zero numbers. The gradient at the bottom of the network vanishes. The weights stop updating. The network stops learning.
+
+This is the vanishing gradient problem. The single biggest reason sigmoids were replaced by relu in the deep learning revival of the twenty tens. Relu does not saturate on the positive side — its limit at infinity is infinity itself — so its slope stays at one no matter how large x gets.
+
+Another flavor of limit at infinity worth knowing — temperature in softmax. With temperature T, softmax becomes the exponential of x sub i divided by T, all divided by the sum of the exponentials of x sub j divided by T. The two limits matter. As T goes to zero, the largest entry dominates, and softmax converges to the argmax — a one hot vector. As T goes to infinity, all entries become nearly equal, and softmax converges to the uniform distribution. You see this in temperature sampling for language models and in knowledge distillation.
+
+Finally, let us preview the derivative, since that is the next notebook. Limits give us the language. The very next thing we do with that language is define the derivative — the slope of a curve at a single point.
+
+Pick a smooth function f and a point x. The slope of the line through the two points x comma f of x, and x plus h comma f of x plus h, is the difference f of x plus h, minus f of x, all divided by h. This line is called a secant line. The slope it computes is the average rate of change over a small interval.
+
+Now imagine letting h shrink toward zero. The two points slide together. In the limit, the secant becomes the tangent line — the line that just kisses the curve at x. Its slope is the instantaneous rate of change, written f prime of x. And f prime of x equals the limit, as h approaches zero, of f of x plus h, minus f of x, all divided by h.
+
+This is the definition of the derivative. Notebook two is a careful exploration of what it means, what rules govern it, and what the derivatives of the functions you will see every day actually are.
+
+For now, hold onto this picture. A derivative is a slope, evaluated at a single point, computed by squeezing a secant line into a tangent.
+
+Let us close with where you actually see limits and continuity in machine learning. They rarely show up by name in modern code. But they are underneath every design decision about activations, losses, and numerical stability.
+
+Activation choice. Continuity guarantees the loss surface has no walls. Differentiability guarantees backpropagation works. Relu's corner at zero is good enough precisely because we almost never sit exactly at zero. Gelu, swish, and mish are continuity and smoothness perfectionists.
+
+Vanishing gradients. Saturation means the derivative limits to zero at the asymptote. The whole architectural shift from sigmoid and hyperbolic tangent to relu, and from recurrent networks to long short term memory to attention, is one long response to this issue.
+
+Exploding gradients. Limits at infinity of activations like e to the x, used inside softmax, blow up. The log sum exp trick — log of the sum of e to the x sub i, equals max of x, plus log of the sum of e to the x sub i minus max of x — is a numerical recipe that exploits the limit behavior to stay stable.
+
+Softmax temperature. T going to zero gives argmax. T going to infinity gives uniform. Temperature sampling in large language models, distillation losses, and contrastive learning all use this limit explicitly.
+
+Cross entropy and log of zero. Cross entropy hits negative log of zero, which is infinity, when the model is fully confident in the wrong answer. Frameworks clamp predictions to a small range above zero and below one for exactly this reason — a numerical version of "the limit does not exist, so stop before you reach it."
+
+Continuous relaxations of discrete operations. Argmax is discontinuous. Softmax is its continuous relaxation. Gumbel softmax, the concrete distribution, and straight through estimators are all ways to replace discontinuous selections with continuous approximations so that calculus works.
+
+Why do we use floats and not booleans for gradients? Backpropagation demands differentiable everything. Any discrete decision in the forward pass needs a continuous surrogate, or a special estimator.
+
+The next notebook covers derivatives. We will formalize the slope of a curve idea, learn the rules for combining derivatives, and compute the derivative of every activation, loss, and link function machine learning throws at us.

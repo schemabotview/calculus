@@ -1,0 +1,89 @@
+Welcome to notebook six — taylor series and approximations. The whole point of calculus is to replace something complicated with something simple, near a point. The simplest approximation is a line — the tangent line we built up in notebooks one and two.
+
+If f is differentiable at a point a, the linear approximation of f near a is — f of x is approximately f of a, plus f prime of a, times the quantity x minus a. Read it as — start at the value f of a, then walk along the tangent's slope. Exact at x equals a. Pretty good nearby. Wrong by an amount that grows as you stray from a.
+
+How wrong? For a twice differentiable f, the error is bounded by a constant times x minus a, squared. So as x approaches a, the error goes to zero quadratically — much faster than linearly. This is why the linear approximation is the right local picture. Small perturbations produce very small errors.
+
+In machine learning language. When you take a gradient descent step, the loss changes by approximately gradient of l, dotted with delta w, to first order — the linear approximation. The error of that estimate is order the squared norm of delta w. That is why small learning rates work. The linear prediction is reliable.
+
+Now add one more term to capture curvature. The quadratic approximation of f near a is — f of x is approximately f of a, plus f prime of a, times x minus a, plus one half, times f double prime of a, times x minus a, squared.
+
+You can read this off e to the x at a equals zero. F of zero is one. F prime of zero is one. F double prime of zero is one. So e to the x is approximately one plus x, plus x squared over two, near zero.
+
+The error of the quadratic approximation is order x minus a, cubed — even more forgiving than the linear case. Geometrically, a parabola hugs the curve better than a line at any twice differentiable point.
+
+For machine learning, the quadratic approximation is the local picture used by second order optimization methods. Near a candidate minimum, a smooth loss looks like a bowl, and the bowl is described by its gradient — which is zero at the minimum — and its hessian — the curvature of the walls. Newton's method, b f g s, l b f g s, and natural gradient all minimize the quadratic approximation exactly at each step.
+
+Now we push the idea to all orders at once. The taylor series of f about a is the infinite polynomial. The sum, from n equals zero to infinity, of f to the n-th derivative at a, divided by n factorial, times x minus a to the n.
+
+When this series converges to f, we say f is analytic at a. The series is exactly f, not just an approximation. Polynomials, e to the x, sine x, cosine x, log of one plus x within radius one — and most functions machine learning uses — are analytic in regions you care about.
+
+Three classic series, all centered at a equals zero. E to the x equals one, plus x, plus x squared over two factorial, plus x cubed over three factorial, and so on. Sine x equals x, minus x cubed over three factorial, plus x to the fifth over five factorial, minus x to the seventh over seven factorial. And the series for one over one minus x equals one, plus x, plus x squared, plus x cubed, and so on, valid when the absolute value of x is less than one.
+
+Truncation. Drop terms past order n, and you have the n-th order taylor polynomial of f. The remainder — the error of the truncation — is order x minus a, to the n plus one. So a linear approximation has order x minus a squared error. A quadratic has order x minus a cubed error.
+
+For machine learning, the linear approximation is n equals one. The quadratic is n equals two. We almost never go past n equals two, because second derivatives — the hessian — are already expensive, and third derivatives are essentially never used.
+
+Now lift everything to many variables. For a scalar function f from R n to R, expanding about a point a, f of x is approximately f of a, plus the gradient of f at a, dotted with x minus a, plus one half, times x minus a, transpose, times the hessian of f at a, times x minus a.
+
+The roles transfer exactly. The gradient plays the part of f prime of a. The hessian plays the part of f double prime of a. The squared term — x minus a, squared — becomes the quadratic form — x minus a, transpose, hessian, times x minus a.
+
+Three orders, three uses.
+
+Order zero — f of x is approximately f of a. Useless on its own, but it is where loss landscape intuition starts.
+
+Order one, the linear approximation. What every gradient descent step assumes locally. The first order taylor polynomial of the loss at w says — l of w plus delta is approximately l of w, plus gradient of l at w, dotted with delta. Minimize over delta of unit length, and you get delta equals negative gradient of l, divided by the norm of the gradient — that is steepest descent.
+
+Order two, the quadratic approximation. What newton's method assumes. The second order taylor polynomial is itself a quadratic in delta, and we can minimize it in closed form.
+
+That last point is the heart of newton's method. Near a candidate point x, write the second order taylor expansion of f. F of x plus delta is approximately f of x, plus gradient of f, dotted with delta, plus one half, times delta transpose, times hessian of f, times delta.
+
+The right hand side is a quadratic in delta. Minimize it — take its gradient with respect to delta, using the matrix calculus identities from notebook five, set to zero. The result is — gradient of f at x, plus hessian of f at x, times delta, equals zero. Solving for delta gives — delta equals negative hessian inverse, times the gradient.
+
+That is newton's step. Move to x plus delta. Repeat. The update rule is — x at step t plus one equals x at step t, minus hessian inverse at x sub t, times the gradient at x sub t.
+
+Why is it powerful? Near a minimum, where the function genuinely is approximately quadratic, newton's method converges quadratically. The error squares each iteration. From one times ten to the minus three, to one times ten to the minus six, to one times ten to the minus twelve, in three steps. Gradient descent only converges linearly.
+
+Why is it hard in machine learning? Forming and inverting the hessian is order n cubed time, and order n squared memory — infeasible for millions of parameters. So machine learning uses cheap approximations. B f g s and l b f g s, with low memory rank one updates. Natural gradient, with fisher information as a hessian surrogate. And hessian free methods, which compute hessian times v for a single vector v, instead of forming the full hessian. All notebook seven fare.
+
+A note. Newton's method finds stationary points, not minima specifically. It can converge to saddles or maxima too. For machine learning, that is actually a feature in some contexts — second order methods can escape saddles that gradient descent gets stuck near.
+
+Let me preview a beautiful application of quadratic taylor — the laplace approximation. We will not fully cover it until the probability repo, but it is worth seeding now.
+
+Setup. You have a probability distribution p of theta that you cannot compute analytically — say a posterior in bayesian inference. But you can find its mode theta star — the maximum a posteriori estimate — and you can compute its log and its hessian.
+
+Idea. Approximate p of theta by a gaussian centered at theta star. Why a gaussian? Because near its mode, log p of theta is locally quadratic, by taylor.
+
+Specifically, log p of theta is approximately log p of theta star, minus one half, times theta minus theta star, transpose, times capital lambda, times theta minus theta star. Where capital lambda equals negative the hessian of log p at theta star.
+
+Exponentiating, this is exactly the form of a gaussian with mean theta star and covariance capital lambda inverse. So p of theta is approximately normal with mean theta star, and covariance the inverse of the negative hessian of log p at theta star.
+
+This is the laplace approximation. It is one of the cheapest, most used recipes in bayesian deep learning, integrated information theory, and approximate inference. Once you see it, you will see it everywhere — including underneath newton's method, b i c model selection, and many parts of variational inference.
+
+The point for this notebook — all of these "approximate a complicated function by a quadratic" methods are taylor expansion in disguise.
+
+Let us close with where taylor expansion appears in machine learning. It is the math behind every "we will approximate the loss locally" argument in the field.
+
+Steepest descent. Minimizing the first order taylor approximation gives negative gradient divided by its norm — the steepest descent direction.
+
+Newton's method, b f g s, and l b f g s. Minimize the second order taylor approximation. B f g s and l b f g s approximate the hessian cheaply with rank one updates. They show up in scipy dot optimize and in classical convex optimization solvers used inside many machine learning pipelines.
+
+Natural gradient. Replace the hessian with the fisher information matrix. Gives steps that are invariant to reparameterization.
+
+Trust region methods. Trust the second order taylor only within a small radius. Shrink the radius when the approximation overshoots.
+
+Laplace approximation. Quadratic taylor of log p of theta at the mode gives a gaussian. Used in bayesian neural networks, b i c model selection, and post hoc uncertainty quantification.
+
+Variational inference. Approximate intractable posteriors with simpler families. The evidence lower bound has taylor approximations baked into many derivations.
+
+Loss landscape analysis. Sharpness measures, like sharpness aware minimization, literally measure the quadratic part of the local taylor expansion of the loss.
+
+Gradient checkpointing math. The compute memory trade off uses taylor remainders to bound the error of recomputed activations.
+
+Network expansion and pruning. Compute the importance of weights via first or second order taylor estimates of how much removing them perturbs the loss.
+
+Numerical differentiation error bounds. Forward differences have order h error from the first dropped taylor term. Central differences have order h squared error from the second.
+
+Diffusion models. The tweedie formula and stein score estimation can be derived through taylor expansions of log densities.
+
+The next notebook covers optimization and convexity. We put the taylor machinery to work, study gradient descent variants properly, derive convexity tests via the hessian, and meet saddle points — which torment high dimensional optimization.
